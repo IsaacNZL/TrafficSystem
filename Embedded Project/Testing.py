@@ -50,7 +50,8 @@ net.setInputSwapRB(True)
 # Function to set up object detection drawing on the frame
 def getObjects(img, thres, nms, draw=True, objects=[]):
     classIds, confs, bbox = net.detect(img, confThreshold=thres, nmsThreshold=nms)
-    if len(objects) == 0: objects = classNames
+    if len(objects) == 0:
+        objects = classNames
     objectInfo = []
     if len(classIds) != 0:
         for classId, confidence, box in zip(classIds.flatten(), confs.flatten(), bbox):
@@ -104,41 +105,45 @@ picam2.start()
 process_thread = threading.Thread(target=process_frames)
 process_thread.start()
 
-# Main loop for capturing video frames and displaying processed frames
-while True:
-    # Capture a frame from the Pi camera
-    img = picam2.capture_array("main")
-    img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)  # Convert from BGRA to BGR
+# Main loop for capturing frames every 3 seconds and displaying processed frames
+try:
+    while True:
+        # Capture a frame from the Pi camera every 3 seconds
+        img = picam2.capture_array("main")
+        img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)  # Convert from BGRA to BGR
 
-    frame_queue.put(img)  # Put the captured frame into the queue
+        frame_queue.put(img)  # Put the captured frame into the queue
 
-    # Display the processed frame (with bounding boxes) once available
-    if not processed_frame_queue.empty():
-        processed_frame, total_vehicles, car_count, bus_count, motorcycle_count, date, current_time = processed_frame_queue.get()
+        # Display the processed frame (with bounding boxes) once available
+        if not processed_frame_queue.empty():
+            processed_frame, total_vehicles, car_count, bus_count, motorcycle_count, date, current_time = processed_frame_queue.get()
 
-        # Print vehicle counts for the current frame
-        print(f"VehicleCount: {total_vehicles} | Cars: {car_count} | Buses: {bus_count} | Motorcycles: {motorcycle_count}")
+            # Print vehicle counts for the current frame
+            print(f"VehicleCount: {total_vehicles} | Cars: {car_count} | Buses: {bus_count} | Motorcycles: {motorcycle_count}")
 
-        # Upload vehicle counts to the database
-        c.execute(
-            "INSERT INTO TrafficCam1 (VehicleCount, Date, Time, Car, Bus, Motorbike) VALUES (%s, %s, %s, %s, %s, %s)",
-            (total_vehicles, date, current_time, car_count, bus_count, motorcycle_count))
-        db_conn.commit()  # Commit all changes to the database
+            # Upload vehicle counts to the database
+            c.execute(
+                "INSERT INTO TrafficCam1 (VehicleCount, Date, Time, Car, Bus, Motorbike) VALUES (%s, %s, %s, %s, %s, %s)",
+                (total_vehicles, date, current_time, car_count, bus_count, motorcycle_count))
+            db_conn.commit()  # Commit all changes to the database
 
-        # Resize frame for display
-        frame_resized = cv2.resize(processed_frame, (int(processed_frame.shape[1] * 0.45), int(processed_frame.shape[0] * 0.45)))
-        cv2.imshow("Output", frame_resized)
+            # Resize frame for display
+            frame_resized = cv2.resize(processed_frame, (int(processed_frame.shape[1] * 0.45), int(processed_frame.shape[0] * 0.45)))
+            cv2.imshow("Output", frame_resized)
 
-    # Exit when 'q' is pressed
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        stop_flag = True
-        break
+        # Wait for 3 seconds
+        time.sleep(3)
 
-# Stop the object detection thread
-frame_queue.put(None)
-process_thread.join()
+        # Exit when 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            stop_flag = True
+            break
+finally:
+    # Stop the object detection thread
+    frame_queue.put(None)
+    process_thread.join()
 
-# Cleanup
-picam2.stop()  # Stop the camera
-db_conn.close()
-cv2.destroyAllWindows()
+    # Cleanup
+    picam2.stop()  # Stop the camera
+    db_conn.close()
+    cv2.destroyAllWindows()
