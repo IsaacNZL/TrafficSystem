@@ -111,8 +111,11 @@ def get_vehicle_count_cam2():
 # Initialize cycle count
 cycle_count = 0
 
-# Set the initial state to RED for Traffic Light 2
+# Set the initial state to RED for both Traffic Lights
+change_light(1, RED)
 change_light(2, RED)
+
+time.sleep(1)  # Wait 1 second before starting the main loop
 
 try:
     # Infinite loop to control the traffic lights
