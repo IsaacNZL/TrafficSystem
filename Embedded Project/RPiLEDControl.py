@@ -1,11 +1,16 @@
-import RPi.GPIO as GPIO
 import time
+import RPi.GPIO as GPIO
 
-# GPIO setup
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(18, GPIO.OUT)  # Green LED
-GPIO.setup(23, GPIO.OUT)  # Orange LED
-GPIO.setup(25, GPIO.OUT)  # Red LED
+# GPIO pin setup
+RED_LED_PIN = 18    # GPIO pin for red light
+ORANGE_LED_PIN = 23 # GPIO pin for orange light
+GREEN_LED_PIN = 25  # GPIO pin for green light
+
+# Setup GPIO
+GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
+GPIO.setup(RED_LED_PIN, GPIO.OUT) 
+GPIO.setup(ORANGE_LED_PIN, GPIO.OUT)
+GPIO.setup(GREEN_LED_PIN, GPIO.OUT)
 
 # Traffic light state constants
 RED = "RED"
@@ -31,22 +36,22 @@ camera_2_cycle = 0
 
 green_time = 0
 
-# Function to change traffic light states and control LEDs for Traffic Light 2
+# Function to change traffic light states and update GPIO
 def change_light(light_number, state):
-    if light_number == 2:  # Only control LEDs for Traffic Light 2
-        if state == GREEN:
-            GPIO.output(18, GPIO.HIGH)
-            GPIO.output(23, GPIO.LOW)
-            GPIO.output(25, GPIO.LOW)
-        elif state == ORANGE:
-            GPIO.output(18, GPIO.LOW)
-            GPIO.output(23, GPIO.HIGH)
-            GPIO.output(25, GPIO.LOW)
-        elif state == RED:
-            GPIO.output(18, GPIO.LOW)
-            GPIO.output(23, GPIO.LOW)
-            GPIO.output(25, GPIO.HIGH)
     print(f"Traffic Light {light_number} is now {state}")
+    if light_number == 2:  # Only update GPIO for Traffic Light 2
+        if state == RED:
+            GPIO.output(RED_LED_PIN, GPIO.HIGH)
+            GPIO.output(ORANGE_LED_PIN, GPIO.LOW)
+            GPIO.output(GREEN_LED_PIN, GPIO.LOW)
+        elif state == ORANGE:
+            GPIO.output(RED_LED_PIN, GPIO.LOW)
+            GPIO.output(ORANGE_LED_PIN, GPIO.HIGH)
+            GPIO.output(GREEN_LED_PIN, GPIO.LOW)
+        elif state == GREEN:
+            GPIO.output(RED_LED_PIN, GPIO.LOW)
+            GPIO.output(ORANGE_LED_PIN, GPIO.LOW)
+            GPIO.output(GREEN_LED_PIN, GPIO.HIGH)
 
 # Simulate vehicle count for Camera 1
 def get_vehicle_count_cam1():
@@ -95,7 +100,7 @@ try:
         print(f"Vehicle Count Cam 2 (Simulated): {vehicle_count_cam2}")
 
         # Green light time counter
-        green_time = 0
+        #green_time = 0
 
         # Check which traffic light should go green
         if traffic_light_1_state == RED and traffic_light_2_state == RED:
@@ -113,6 +118,10 @@ try:
             time.sleep(1)
             green_time += 1
 
+            # Print the vehicle count during green light
+            print(f"Vehicle Count Cam 1 (during green): {vehicle_count_cam1}")
+            print(f"Vehicle Count Cam 2 (during green): {vehicle_count_cam2}")
+
             # Check after at least 5 seconds if vehicles are detected in the opposite camera
             if green_time >= DELAY_GREEN_MIN:
                 if vehicle_count_cam2 > 0:  # Check if the opposite camera has vehicles
@@ -128,11 +137,18 @@ try:
                     print("Traffic Light 2 is green.")
                     green_time = 0  # Reset green_time for the next light
                     break
+            else:
+                # If the green time has not reached the minimum, allow a break to check the next loop
+                break  # Exit the while loop temporarily to check the next state
 
         # Green light logic for Traffic Light 2
         while traffic_light_2_state == GREEN:
             time.sleep(1)
             green_time += 1
+
+            # Print the vehicle count during green light
+            print(f"Vehicle Count Cam 1 (during green): {vehicle_count_cam1}")
+            print(f"Vehicle Count Cam 2 (during green): {vehicle_count_cam2}")
 
             # Check after at least 5 seconds if vehicles are detected in the opposite camera
             if green_time >= DELAY_GREEN_MIN:
@@ -149,6 +165,9 @@ try:
                     print("Traffic Light 1 is green.")
                     green_time = 0  # Reset green_time for the next light
                     break
+            else:
+                # If the green time has not reached the minimum, allow a break to check the next loop
+                break  # Exit the while loop temporarily to check the next state
 
         # Print the current state of traffic lights
         print(f"Traffic Light 1: {traffic_light_1_state}, \nTraffic Light 2: {traffic_light_2_state}")
@@ -157,12 +176,11 @@ try:
         time.sleep(DELAY_BETWEEN_CYCLES)
 
 except KeyboardInterrupt:
-    # This block will execute when Ctrl+C is pressed
-    print("Exiting program...")
+    print("Traffic control program interrupted.")
 
 finally:
-    # Ensure all LEDs are turned off when the program ends
-    GPIO.output(18, GPIO.LOW)
-    GPIO.output(23, GPIO.LOW)
-    GPIO.output(25, GPIO.LOW)
-    GPIO.cleanup()
+    # Turn off all LEDs when the program ends
+    GPIO.output(RED_LED_PIN, GPIO.LOW)
+    GPIO.output(ORANGE_LED_PIN, GPIO.LOW)
+    GPIO.output(GREEN_LED_PIN, GPIO.LOW)
+    GPIO.cleanup()  # Clean up GPIO settings
