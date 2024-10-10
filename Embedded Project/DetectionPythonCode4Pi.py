@@ -60,7 +60,7 @@ if __name__ == "__main__":
         img = picam2.capture_array("main")
         img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
         # Below provides a huge amount of controll. the 0.45 number is the threshold number, the 0.2 number is the nms number)
-        result, objectInfo = getObjects(img, 0.45, 0.2)
+        result, objectInfo = getObjects(img, 0.6, 0.2, objects=['car', 'motorcycle', 'bus'])
         # print(objectInfo)
         cv2.imshow("Output", img)
 
@@ -70,3 +70,4 @@ if __name__ == "__main__":
             picam2.stop()
             cv2.destroyAllWindows()
             break
+
