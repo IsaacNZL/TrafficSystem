@@ -182,7 +182,9 @@ try:
         # Wait for a moment before the next cycle
         time.sleep(DELAY_BETWEEN_CYCLES)
 
-# Ensure GPIO cleanup on exit
+# Ensure GPIO cleanup and turn off all LEDs on exit
 finally:
+    GPIO.output(GREEN_PIN, GPIO.LOW)
+    GPIO.output(ORANGE_PIN, GPIO.LOW)
+    GPIO.output(RED_PIN, GPIO.LOW)
     GPIO.cleanup()
-
