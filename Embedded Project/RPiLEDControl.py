@@ -1,5 +1,6 @@
 import time
 import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
+import keyboard  # Module for detecting key presses
 
 # Set up GPIO mode
 GPIO.setmode(GPIO.BCM)
@@ -176,15 +177,28 @@ try:
             else:
                 break  # Exit the while loop temporarily to check the next state
 
+        # Red light logic for Traffic Light 2 (only transitions to green)
+        if traffic_light_2_state == RED:
+            time.sleep(DELAY_RED)
+            traffic_light_2_state = GREEN
+            change_light(2, GREEN)
+            green_time = 0
+
         # Print the current state of traffic lights
         print(f"Traffic Light 1: {traffic_light_1_state}, \nTraffic Light 2: {traffic_light_2_state}")
+
+        # Check if ESC key is pressed to exit
+        if keyboard.is_pressed('esc'):
+            print("ESC pressed, ending program...")
+            break
 
         # Wait for a moment before the next cycle
         time.sleep(DELAY_BETWEEN_CYCLES)
 
-# Ensure GPIO cleanup and turn off all LEDs on exit
+# Turn off all LEDs and clean up GPIO when ESC is pressed
 finally:
     GPIO.output(GREEN_PIN, GPIO.LOW)
     GPIO.output(ORANGE_PIN, GPIO.LOW)
     GPIO.output(RED_PIN, GPIO.LOW)
     GPIO.cleanup()
+    print("All LEDs turned off and GPIO cleaned up.")
