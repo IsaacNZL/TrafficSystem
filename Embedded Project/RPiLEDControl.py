@@ -1,16 +1,27 @@
 import time
 import RPi.GPIO as GPIO
 
-# GPIO pin setup
-RED_LED_PIN = 18    # GPIO pin for red light
-ORANGE_LED_PIN = 23 # GPIO pin for orange light
-GREEN_LED_PIN = 25  # GPIO pin for green light
+# GPIO pin setup for Traffic Light 1
+RED_LED_PIN_1 = 17    # GPIO pin for red light of Traffic Light 1
+ORANGE_LED_PIN_1 = 27 # GPIO pin for orange light of Traffic Light 1
+GREEN_LED_PIN_1 = 22   # GPIO pin for green light of Traffic Light 1
+
+# GPIO pin setup for Traffic Light 2
+RED_LED_PIN_2 = 18    # GPIO pin for red light of Traffic Light 2
+ORANGE_LED_PIN_2 = 23 # GPIO pin for orange light of Traffic Light 2
+GREEN_LED_PIN_2 = 25   # GPIO pin for green light of Traffic Light 2
 
 # Setup GPIO
 GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
-GPIO.setup(RED_LED_PIN, GPIO.OUT) 
-GPIO.setup(ORANGE_LED_PIN, GPIO.OUT)
-GPIO.setup(GREEN_LED_PIN, GPIO.OUT)
+# Initialize GPIO for Traffic Light 1
+GPIO.setup(RED_LED_PIN_1, GPIO.OUT)
+GPIO.setup(ORANGE_LED_PIN_1, GPIO.OUT)
+GPIO.setup(GREEN_LED_PIN_1, GPIO.OUT)
+
+# Initialize GPIO for Traffic Light 2
+GPIO.setup(RED_LED_PIN_2, GPIO.OUT)
+GPIO.setup(ORANGE_LED_PIN_2, GPIO.OUT)
+GPIO.setup(GREEN_LED_PIN_2, GPIO.OUT)
 
 # Traffic light state constants
 RED = "RED"
@@ -39,19 +50,33 @@ green_time = 0
 # Function to change traffic light states and update GPIO
 def change_light(light_number, state):
     print(f"Traffic Light {light_number} is now {state}")
-    if light_number == 2:  # Only update GPIO for Traffic Light 2
+    if light_number == 1:  # Update GPIO for Traffic Light 1
         if state == RED:
-            GPIO.output(RED_LED_PIN, GPIO.HIGH)
-            GPIO.output(ORANGE_LED_PIN, GPIO.LOW)
-            GPIO.output(GREEN_LED_PIN, GPIO.LOW)
+            GPIO.output(RED_LED_PIN_1, GPIO.HIGH)
+            GPIO.output(ORANGE_LED_PIN_1, GPIO.LOW)
+            GPIO.output(GREEN_LED_PIN_1, GPIO.LOW)
         elif state == ORANGE:
-            GPIO.output(RED_LED_PIN, GPIO.LOW)
-            GPIO.output(ORANGE_LED_PIN, GPIO.HIGH)
-            GPIO.output(GREEN_LED_PIN, GPIO.LOW)
+            GPIO.output(RED_LED_PIN_1, GPIO.LOW)
+            GPIO.output(ORANGE_LED_PIN_1, GPIO.HIGH)
+            GPIO.output(GREEN_LED_PIN_1, GPIO.LOW)
         elif state == GREEN:
-            GPIO.output(RED_LED_PIN, GPIO.LOW)
-            GPIO.output(ORANGE_LED_PIN, GPIO.LOW)
-            GPIO.output(GREEN_LED_PIN, GPIO.HIGH)
+            GPIO.output(RED_LED_PIN_1, GPIO.LOW)
+            GPIO.output(ORANGE_LED_PIN_1, GPIO.LOW)
+            GPIO.output(GREEN_LED_PIN_1, GPIO.HIGH)
+
+    elif light_number == 2:  # Update GPIO for Traffic Light 2
+        if state == RED:
+            GPIO.output(RED_LED_PIN_2, GPIO.HIGH)
+            GPIO.output(ORANGE_LED_PIN_2, GPIO.LOW)
+            GPIO.output(GREEN_LED_PIN_2, GPIO.LOW)
+        elif state == ORANGE:
+            GPIO.output(RED_LED_PIN_2, GPIO.LOW)
+            GPIO.output(ORANGE_LED_PIN_2, GPIO.HIGH)
+            GPIO.output(GREEN_LED_PIN_2, GPIO.LOW)
+        elif state == GREEN:
+            GPIO.output(RED_LED_PIN_2, GPIO.LOW)
+            GPIO.output(ORANGE_LED_PIN_2, GPIO.LOW)
+            GPIO.output(GREEN_LED_PIN_2, GPIO.HIGH)
 
 # Simulate vehicle count for Camera 1
 def get_vehicle_count_cam1():
@@ -183,7 +208,10 @@ except KeyboardInterrupt:
 
 finally:
     # Turn off all LEDs when the program ends
-    GPIO.output(RED_LED_PIN, GPIO.LOW)
-    GPIO.output(ORANGE_LED_PIN, GPIO.LOW)
-    GPIO.output(GREEN_LED_PIN, GPIO.LOW)
+    GPIO.output(RED_LED_PIN_1, GPIO.LOW)
+    GPIO.output(ORANGE_LED_PIN_1, GPIO.LOW)
+    GPIO.output(GREEN_LED_PIN_1, GPIO.LOW)
+    GPIO.output(RED_LED_PIN_2, GPIO.LOW)
+    GPIO.output(ORANGE_LED_PIN_2, GPIO.LOW)
+    GPIO.output(GREEN_LED_PIN_2, GPIO.LOW)
     GPIO.cleanup()  # Clean up GPIO settings
