@@ -5,7 +5,7 @@ import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)  # Disable warnings
 
-# Define the GPIO pins for the traffic lights
+# Define the GPIO pins for Traffic Light 2
 GREEN_PIN = 18
 ORANGE_PIN = 23
 RED_PIN = 25
@@ -39,26 +39,26 @@ camera_2_cycle = 0
 
 green_time = 0
 
-# Function to change traffic light states and control GPIO
+# Function to change traffic light states for Traffic Light 2 and control GPIO
 def change_light(light_number, state):
     if light_number == 1:
         print(f"Traffic Light {light_number} is now {state}")
     elif light_number == 2:
         print(f"Traffic Light {light_number} is now {state}")
+        
+        # Control GPIO only for Traffic Light 2
+        # Turn off all LEDs first
+        GPIO.output(GREEN_PIN, GPIO.LOW)
+        GPIO.output(ORANGE_PIN, GPIO.LOW)
+        GPIO.output(RED_PIN, GPIO.LOW)
 
-    # Turn off all lights first
-    GPIO.output(GREEN_PIN, GPIO.LOW)
-    GPIO.output(ORANGE_PIN, GPIO.LOW)
-    GPIO.output(RED_PIN, GPIO.LOW)
-
-    # Turn on the correct light based on the state
-    if state == GREEN:
-        GPIO.output(GREEN_PIN, GPIO.HIGH)
-    elif state == ORANGE:
-        GPIO.output(ORANGE_PIN, GPIO.HIGH)
-    elif state == RED:
-        GPIO.output(RED_PIN, GPIO.HIGH)
-
+        # Turn on the correct LED based on the state
+        if state == GREEN:
+            GPIO.output(GREEN_PIN, GPIO.HIGH)
+        elif state == ORANGE:
+            GPIO.output(ORANGE_PIN, GPIO.HIGH)
+        elif state == RED:
+            GPIO.output(RED_PIN, GPIO.HIGH)
 
 # Simulate vehicle count for Camera 1
 def get_vehicle_count_cam1():
@@ -122,7 +122,7 @@ try:
                 change_light(2, GREEN)
                 print("Traffic Light 2 is green.")
 
-        # Green light logic for Traffic Light 1
+        # Green light logic for Traffic Light 1 (No GPIO control)
         while traffic_light_1_state == GREEN:
             time.sleep(1)
             green_time += 1
@@ -149,7 +149,7 @@ try:
             else:
                 break  # Exit the while loop temporarily to check the next state
 
-        # Green light logic for Traffic Light 2
+        # Green light logic for Traffic Light 2 (With GPIO control)
         while traffic_light_2_state == GREEN:
             time.sleep(1)
             green_time += 1
@@ -185,3 +185,4 @@ try:
 # Ensure GPIO cleanup on exit
 finally:
     GPIO.cleanup()
+
