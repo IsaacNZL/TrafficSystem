@@ -36,10 +36,12 @@ class DatabaseConnection:
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT Mode FROM TrafficCam1Mode")
-                mode1 = cursor.fetchone()[0] if cursor.fetchone() else None
+                mode1_result = cursor.fetchone()
+                mode1 = mode1_result[0] if mode1_result else None
 
                 cursor.execute("SELECT Mode FROM TrafficCam2Mode")
-                mode2 = cursor.fetchone()[0] if cursor.fetchone() else None
+                mode2_result = cursor.fetchone()
+                mode2 = mode2_result[0] if mode2_result else None
 
                 return mode1, mode2
         finally:
@@ -49,19 +51,16 @@ class DatabaseConnection:
         connection = self.get_connection()
         try:
             with connection.cursor() as cursor:
-                query = f"INSERT INTO TrafficLight{light_number} (Colour) VALUES (%s)"
-                cursor.execute(query, (state,))
-            connection.commit()
-        finally:
-            connection.close()
-
-    def delete_light_state(self, light_number):
-        connection = self.get_connection()
-        try:
-            with connection.cursor() as cursor:
-                query = f"DELETE FROM TrafficLight{light_number}"
-                cursor.execute(query)
-            connection.commit()
+                # Delete current light state before updating
+                delete_query = f"DELETE FROM TrafficLight{light_number}"
+                cursor.execute(delete_query)
+                connection.commit()
+                
+                # Insert new light state
+                insert_query = f"INSERT INTO TrafficLight{light_number} (Colour) VALUES (%s)"
+                cursor.execute(insert_query, (state,))
+                connection.commit()
+                print(f"Updated TrafficLight{light_number} state to {state}")  # Debug statement
         finally:
             connection.close()
 
@@ -116,41 +115,54 @@ class TrafficLightSystem:
             print(f"Traffic Light {light_number} in Manual Mode")
             time.sleep(self.DELAY_BETWEEN_CYCLES)
 
-    def handle_automatic_mode(self, main_light):
-        other_light = 1 if main_light == 2 else 2
-        self.traffic_lights[main_light].change_light(TrafficLight.GREEN)
-        self.traffic_lights[other_light].change_light(TrafficLight.RED)
-        time.sleep(self.DELAY_GREEN_MIN)
+    def handle_automatic_mode(self):
+        """ Alternate between the two traffic lights in automatic mode. """
+        current_light = 1  # Start with Traffic Light 1
+        other_light = 2
 
         while self.db.fetch_modes() == ("Automatic", "Automatic"):
-            vehicle_count = self.db.fetch_vehicle_count(other_light)
-            print(f"Vehicle Count Camera {other_light}: {vehicle_count}")
+            print(f"Switching Traffic Light {current_light} to GREEN")
+            # Green for current_light, Red for other_light
+            self.traffic_lights[current_light].change_light(TrafficLight.GREEN)
+            self.traffic_lights[other_light].change_light(TrafficLight.RED)
+            time.sleep(self.DELAY_GREEN_MIN)
 
-            if vehicle_count > 0:
-                self.traffic_lights[main_light].change_light(TrafficLight.ORANGE)
+            vehicle_count_other = self.db.fetch_vehicle_count(other_light)
+            print(f"Vehicle Count Camera {other_light}: {vehicle_count_other}")
+
+            if vehicle_count_other > 0:
+                # Transition current_light from green to orange to red
+                self.traffic_lights[current_light].change_light(TrafficLight.ORANGE)
                 time.sleep(self.DELAY_ORANGE)
-                self.traffic_lights[main_light].change_light(TrafficLight.RED)
+                self.traffic_lights[current_light].change_light(TrafficLight.RED)
                 time.sleep(self.DELAY_AFTER_RED)
-                self.traffic_lights[other_light].change_light(TrafficLight.GREEN)
-                break
+
+                # Swap the lights for the next cycle
+                current_light, other_light = other_light, current_light  # Swap roles
+                time.sleep(self.DELAY_BETWEEN_CYCLES)
             else:
-                print(f"Traffic Light {main_light} remains green.")
+                print(f"Traffic Light {current_light} remains green.")
                 time.sleep(self.DELAY_BETWEEN_CYCLES)
 
     def run(self):
+        # Initial state: both traffic lights start red
         self.traffic_lights[1].change_light(TrafficLight.RED)
         self.traffic_lights[2].change_light(TrafficLight.RED)
 
         try:
             while True:
+                # Fetch the modes for both lights (Manual or Automatic)
                 mode1, mode2 = self.db.fetch_modes()
 
+                # If Traffic Light 1 is in manual mode
                 if mode1 == "Manual":
                     self.handle_manual_mode(1)
+                # If Traffic Light 2 is in manual mode
                 elif mode2 == "Manual":
                     self.handle_manual_mode(2)
+                # If both Traffic Lights are in automatic mode
                 elif mode1 == "Automatic" and mode2 == "Automatic":
-                    self.handle_automatic_mode(1)
+                    self.handle_automatic_mode()  # Alternate between the lights
                 time.sleep(self.DELAY_BETWEEN_CYCLES)
 
         except KeyboardInterrupt:
